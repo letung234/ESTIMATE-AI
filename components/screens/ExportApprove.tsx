@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Download, FileText, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import type { Project } from '@/lib/mockApi';
-import { mockApiService } from '@/lib/mockApi';
+import { getTaskTotalHours, mockApiService } from '@/lib/mockApi';
 
 interface ExportApproveProps {
   project: Project;
@@ -32,7 +33,7 @@ export function ExportApprove({
     setLoading(true);
     try {
       const filename = await mockApiService.exportToPdf(project.id);
-      alert(`PDF generated: ${filename}`);
+      toast.success(`PDF generated: ${filename}`);
     } finally {
       setLoading(false);
     }
@@ -42,7 +43,7 @@ export function ExportApprove({
     setLoading(true);
     try {
       const filename = await mockApiService.exportToExcel(project.id);
-      alert(`Excel generated: ${filename}`);
+      toast.success(`Excel generated: ${filename}`);
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ export function ExportApprove({
     setLoading(true);
     try {
       await mockApiService.updateProject(project.id, { status: 'approved' });
-      alert('Estimate approved!');
+      toast.success('Estimate approved!');
       onBackToDashboard();
     } finally {
       setLoading(false);
@@ -123,6 +124,35 @@ export function ExportApprove({
             </div>
           </div>
 
+          {(estimation.effortByRoleLevel?.length ?? 0) > 0 && (
+            <div className="mt-8 pt-8 border-t border-border">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Hours by role and seniority</h3>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-muted/50 border-b border-border">
+                    <tr>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground">Role</th>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground">Level</th>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground text-right">Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(estimation.effortByRoleLevel ?? []).map((row, idx) => (
+                      <tr
+                        key={`${row.role}-${row.seniority}-${idx}`}
+                        className="border-b border-border last:border-0"
+                      >
+                        <td className="py-2 px-4 uppercase text-foreground">{row.role}</td>
+                        <td className="py-2 px-4 capitalize text-foreground">{row.seniority}</td>
+                        <td className="py-2 px-4 text-right font-medium text-foreground">{row.hours}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="mt-8 pt-8 border-t border-border">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div>
@@ -179,7 +209,7 @@ export function ExportApprove({
 
           <div className="space-y-4">
             {project.features.map((feature) => {
-              const featureTotalHours = feature.tasks.reduce((sum, t) => sum + t.devHours + t.qaHours + t.pmHours, 0);
+              const featureTotalHours = feature.tasks.reduce((sum, t) => sum + getTaskTotalHours(t), 0);
 
               return (
                 <div key={feature.id} className="p-4 bg-background rounded-lg border border-border">
@@ -195,7 +225,11 @@ export function ExportApprove({
                     <div className="ml-4 text-sm space-y-1 text-muted-foreground">
                       {feature.tasks.map((task) => (
                         <p key={task.id}>
-                          • {task.name} (Dev: {task.devHours}h, QA: {task.qaHours}h, PM: {task.pmHours}h)
+                          - {task.name} (
+                          {task.effortLines
+                            .map((line) => `${line.role}/${line.seniority}: ${line.hours}h`)
+                            .join(', ')}
+                          ; total {getTaskTotalHours(task)}h)
                         </p>
                       ))}
                     </div>

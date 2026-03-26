@@ -95,6 +95,35 @@ export function EstimationResult({
             </div>
           </div>
 
+          {(estimation.effortByRoleLevel?.length ?? 0) > 0 && (
+            <div className="mt-8 pt-6 border-t border-primary/20">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Hours by role and seniority</h3>
+              <div className="overflow-x-auto rounded-lg border border-primary/10 bg-background/50">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-primary/5 border-b border-border">
+                    <tr>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground">Role</th>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground">Level</th>
+                      <th className="py-2 px-4 font-semibold text-muted-foreground text-right">Hours</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(estimation.effortByRoleLevel ?? []).map((row, idx) => (
+                      <tr
+                        key={`${row.role}-${row.seniority}-${idx}`}
+                        className="border-b border-border last:border-0"
+                      >
+                        <td className="py-2 px-4 uppercase text-foreground">{row.role}</td>
+                        <td className="py-2 px-4 capitalize text-foreground">{row.seniority}</td>
+                        <td className="py-2 px-4 text-right font-medium text-foreground">{row.hours}h</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {project.budget && (
             <div className="mt-6 pt-6 border-t border-primary/20">
               <div className="flex items-center justify-between">

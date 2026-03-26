@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, FileText, CheckCircle, Clock, Trash2, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { UserMenu } from '@/components/auth/UserMenu';
 import { mockApiService, Project } from '@/lib/mockApi';
 
 interface DashboardProps {
@@ -63,10 +64,13 @@ export function Dashboard({ onNewProject, onOpenProject }: DashboardProps) {
               <h1 className="text-3xl font-bold text-foreground">Project Estimator</h1>
               <p className="text-muted-foreground mt-2">Manage and estimate your projects with AI assistance</p>
             </div>
-            <Button onClick={onNewProject} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
-              <Plus className="w-5 h-5" />
-              New Project
-            </Button>
+            <div className="flex items-center gap-4">
+              <UserMenu />
+              <Button onClick={onNewProject} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                <Plus className="w-5 h-5" />
+                New Project
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -117,7 +121,7 @@ export function Dashboard({ onNewProject, onOpenProject }: DashboardProps) {
           ) : projects.length === 0 ? (
             <div className="text-center py-12 bg-card border border-border rounded-lg">
               <p className="text-muted-foreground mb-4">No projects yet</p>
-              <Button onClick={onNewProject} variant="outline" gap="2">
+              <Button onClick={onNewProject} variant="outline" className="gap-2">
                 <Plus className="w-4 h-4" />
                 Create Your First Project
               </Button>

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dashboard } from './screens/Dashboard';
 import { CreateProject } from './screens/CreateProject';
+import { ConflictResolution } from './screens/ConflictResolution';
 import { DocumentPreview } from './screens/DocumentPreview';
 import { FeatureBreakdown } from './screens/FeatureBreakdown';
 import { EstimationResult } from './screens/EstimationResult';
 import { ClarificationList } from './screens/ClarificationList';
 import { ExportApprove } from './screens/ExportApprove';
-import { mockApiService, Project as MockProject } from '@/lib/mockApi';
+import { mockApiService, Project as MockProject, type ProjectCreationTeamContext } from '@/lib/mockApi';
 
-export type Screen = 'dashboard' | 'create' | 'preview' | 'breakdown' | 'result' | 'clarification' | 'export';
+export type Screen = 'dashboard' | 'create' | 'conflicts' | 'questions' | 'preview' | 'breakdown' | 'result' | 'clarification' | 'export';
 
 export function EstimatorApp() {
   const [screen, setScreen] = useState<Screen>('dashboard');
@@ -52,16 +53,35 @@ export function EstimatorApp() {
     type: 'New' | 'Maintenance' | 'Migration',
     budget: number,
     template: string,
-    documentName?: string
+    documentName: string | undefined,
+    teamContext: ProjectCreationTeamContext
   ) => {
     setLoading(true);
     try {
-      const newProject = await mockApiService.createProject(name, type, budget, template, documentName);
+      const newProject = await mockApiService.createProject(
+        name,
+        type,
+        budget,
+        template,
+        documentName,
+        teamContext
+      );
       setCurrentProject(newProject);
-      navigateTo('preview');
+      // Navigate to conflicts screen instead of preview
+      navigateTo('conflicts');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConflictsResolved = (resolvedConflicts: { conflictId: string; selectedOption: string }[]) => {
+    // Store resolved conflicts (could be saved to project)
+    console.log('Resolved conflicts:', resolvedConflicts);
+    navigateTo('questions');
+  };
+
+  const handleQuestionsNext = () => {
+    navigateTo('preview');
   };
 
   const handleDocumentConfirm = async () => {
@@ -92,6 +112,18 @@ export function EstimatorApp() {
     navigateTo('dashboard');
   };
 
+  const refreshCurrentProject = async () => {
+    if (!currentProject) {
+      return;
+    }
+
+    const updated = await mockApiService.getProject(currentProject.id);
+
+    if (updated) {
+      setCurrentProject({ ...updated });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {loading && (
@@ -114,6 +146,22 @@ export function EstimatorApp() {
           onNext={handleProjectCreate}
         />
       )}
+      {screen === 'conflicts' && currentProject && (
+        <ConflictResolution
+          projectName={currentProject.name}
+          onBack={goBack}
+          onNext={handleConflictsResolved}
+        />
+      )}
+      {screen === 'questions' && currentProject && (
+        <ClarificationList
+          project={currentProject}
+          onNext={handleQuestionsNext}
+          onBackToDashboard={goBack}
+          onProjectRefresh={refreshCurrentProject}
+          mode="initial"
+        />
+      )}
       {screen === 'preview' && currentProject && (
         <DocumentPreview
           project={currentProject}
@@ -128,6 +176,7 @@ export function EstimatorApp() {
           onSelectedFeatureChange={setSelectedFeature}
           onAnalyze={handleAnalyze}
           onBackToDashboard={goBack}
+          onProjectRefresh={refreshCurrentProject}
         />
       )}
       {screen === 'result' && currentProject && (
@@ -143,6 +192,7 @@ export function EstimatorApp() {
           project={currentProject}
           onNext={handleExport}
           onBackToDashboard={goBack}
+          onProjectRefresh={refreshCurrentProject}
         />
       )}
       {screen === 'export' && currentProject && (
